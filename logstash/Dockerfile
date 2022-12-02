@@ -1,6 +1,5 @@
-ARG ELK_VERSION
+ARG LOGSTASH_VERSION
 
-FROM docker.elastic.co/logstash/logstash:${ELK_VERSION}
+FROM docker.elastic.co/logstash/logstash:${LOGSTASH_VERSION}
 
-# Add your logstash plugins setup here
-# Example: RUN logstash-plugin install logstash-filter-json
+RUN rm -f /usr/share/logstash/pipeline/logstash.conf

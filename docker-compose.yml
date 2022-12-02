@@ -14,6 +14,8 @@ services:
       cluster.initial_master_nodes: es01,es02
       bootstrap.memory_lock: "true"
       ES_JAVA_OPTS: -Xms256m -Xmx256m
+    networks:
+      - elk  
     profiles:
       - "es"
       - "all"
@@ -40,6 +42,8 @@ services:
       cluster.initial_master_nodes: es01,es02
       bootstrap.memory_lock: "true"
       ES_JAVA_OPTS: -Xms256m -Xmx256m
+    networks:
+      - elk  
     profiles:
       - "es"
       - "all"  
@@ -64,10 +68,50 @@ services:
       - "5601:5601"
     environment:
       - 'ELASTICSEARCH_HOSTS=["http://es01:9200","http://es02:9200"]'
+    networks:
+      - elk  
     profiles:
       - "kibana"
       - "all"  
-  
+  logstash:
+    container_name: logstash
+    build:
+      context: ./logstash
+      dockerfile: Dockerfile
+      args:
+        - LOGSTASH_VERSION=${LOGSTASH_VERSION}
+    profiles:
+      - logstash"
+      - "all"  
+    networks:
+      - elk
+    environment:
+      LS_JAVA_OPTS: "-Xmx500m -Xms500m"
+    ports:
+      - "5000:5000/tcp"
+      - "5000:5000/udp"
+      - "9600:9600"
+    volumes:
+      - type: bind
+        source: ./logstash/logstash.yml
+        target: /usr/share/logstash/config/logstash.yml
+        read_only: true
+      - type: bind
+        source: ./logstash/pipeline
+        target: /usr/share/logstash/pipeline
+        read_only: true
+    links:
+      - es01    
+      - es02
+    depends_on:
+      es01:
+        condition: service_healthy
+      es02:
+        condition: service_healthy  
 volumes:
   es-data-es01:
   es-data-es02:
+
+networks:
+  elk: 
+    driver: bridge
